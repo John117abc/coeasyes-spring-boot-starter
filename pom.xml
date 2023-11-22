@@ -12,6 +12,7 @@
     <artifactId>coeasyes-spring-boot-starter</artifactId>
     <version>0.9-BATE</version>
     <name>coeasyes-spring-boot-starter</name>
+    <packaging>jar</packaging>
     <properties>
         <java.version>21</java.version>
         <java.release.version>21</java.release.version>
