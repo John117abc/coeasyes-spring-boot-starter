@@ -1,17 +1,13 @@
 package com.coeasyes.mapper.impl;
 
-import com.coeasyes.annotation.EsFieldCondition;
+import com.coeasyes.domain.EsBaseData;
 import com.coeasyes.domain.EsBaseDto;
-import com.coeasyes.domain.EsField;
 import com.coeasyes.domain.EsPage;
 import com.coeasyes.mapper.EsBaseMapper;
 import com.coeasyes.util.EsUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,30 +51,18 @@ public class EsBaseMapperImpl implements EsBaseMapper {
         }
     }
 
+    @Override
+    public <T extends EsBaseData> boolean insert(T esBaseEntity) {
+        return esUtils.addData(esBaseEntity);
+    }
 
-    /**
-     * 获取查询条件
-     * @param esDto 查询条件
-     * @param <T> 查询条件类型
-     * @return 查询条件集合
-     */
-    @Deprecated
-    private <T extends EsBaseDto> List<EsField>  getEsField(T esDto) throws IllegalAccessException {
-        //获取esDto中的EsFieldCondition注解
-        Class<?> myClass = esDto.getClass();
-        Field[] fields = myClass.getDeclaredFields();
-        List<EsField> esFields = new ArrayList<>();
-        for (Field field : fields) {
-            if (field.isAnnotationPresent(EsFieldCondition.class)) {
-                EsFieldCondition annotation = field.getAnnotation(EsFieldCondition.class);
-                field.setAccessible(true); // 允许访问私有字段
-                if (annotation == null || field.get(esDto) == null) {
-                    continue;
-                }
-                EsField esField = new EsField(annotation.fieldName(),field.get(esDto).toString(), annotation.fieldType(),annotation.sortType());
-                esFields.add(esField);
-            }
-        }
-        return esFields;
+    @Override
+    public <T extends EsBaseData> boolean insertBatch(List<T> esBaseEntityList) {
+        return esUtils.addBatchData(esBaseEntityList);
+    }
+
+    @Override
+    public <T extends EsBaseData> boolean update(T esBaseEntity, Class<?> clazz) {
+        return esUtils.updateData(esBaseEntity,clazz);
     }
 }

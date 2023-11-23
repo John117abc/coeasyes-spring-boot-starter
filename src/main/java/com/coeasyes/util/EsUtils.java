@@ -10,10 +10,7 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.util.ObjectBuilder;
-import com.coeasyes.domain.EsBaseData;
-import com.coeasyes.domain.EsField;
-import com.coeasyes.domain.EsPage;
-import com.coeasyes.domain.EsSearchSourceBuilderCollection;
+import com.coeasyes.domain.*;
 import com.coeasyes.exception.UtilException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.client.RequestOptions;
@@ -126,8 +123,8 @@ public class EsUtils {
         try {
             //创建请求
             response = elasticsearchClient.index(i -> i
-                    .index(data.indexName)
-                    .id(data.esId)
+                    .index(data.getIndexName())
+                    .id(data.getEsId())
                     .document(data)
             );
         } catch (Exception e) {
@@ -163,26 +160,14 @@ public class EsUtils {
         return request.result().equals(Result.Updated);
     }
 
-    /**
-     * 单条更新
-     *
-     * @param indexName
-     * @param id
-     * @param data
-     * @return
-     * @throws IOException
-     */
-    public<T> boolean updateData(String indexName, String id, T data,Class<T> clazz) throws IOException {
+    public <T extends EsBaseData> boolean updateData(T data,Class<?> clazz){
         Assert.notNull(data, "Elasticsearch exception data null");
-        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
-        UpdateResponse<T> request = null;
+        Assert.hasLength(data.getIndexName(), "Elasticsearch exception indexName null");
+        Assert.hasLength(data.getEsId(), "Elasticsearch exception id null");
+        UpdateResponse<?> request = null;
         try {
-            request = elasticsearchClient.update(u -> u
-                            .index(indexName)
-                            .id(id)
-                            .upsert(data),
-                    clazz
-            );
+            request = elasticsearchClient.update(
+                    e -> e.index(data.getIndexName()).id(data.getEsId()).refresh(Refresh.True).doc(data), clazz);
         } catch (Exception e) {
             log.error("elasticsearch updateDoc error , meassage = {}", e.getMessage());
             //打印轨迹
@@ -523,6 +508,10 @@ public class EsUtils {
         }
         return boolQueryBuilder;
     }
+
+
+
+
 //
 //
 //    /**
