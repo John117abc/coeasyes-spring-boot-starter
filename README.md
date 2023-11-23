@@ -90,7 +90,7 @@ public class EsSysHttppostLogVo extends EsBaseVo implements Serializable {
 ## 3.5 使用说明
 - 通过继承EsBaseMapper接口，可以直接使用里面的方法，参考以下代码
 ```java
-/**
+    /**
      * 列表查询
      * @param esBaseDto es基础dto
      * @param clazz es实体类
@@ -133,3 +133,8 @@ public class EsSysHttppostLogVo extends EsBaseVo implements Serializable {
      */
     <T extends EsBaseData> boolean update(T esBaseEntity, Class<?> clazz);
 ```
+## 3.6 jar包下载
+- 下载链接
+[0.9-Bate](https://github.com/John117abc/coeasyes-spring-boot-starter/files/13448588/please-decompression.zip)
+
+
