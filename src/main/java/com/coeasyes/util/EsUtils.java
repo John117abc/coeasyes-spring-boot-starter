@@ -387,7 +387,7 @@ public class EsUtils {
             EsSearchSourceBuilderCollection searchSourceBuilderCollection = buildSearchSourceBuilder(conditionFileds);
             SearchResponse<T> response = elasticsearchClient.search(s -> s
                             .index(indexName)
-                            .query((Function<Query.Builder, ObjectBuilder<Query>>) searchSourceBuilderCollection.getQueryBuilder().build())
+                            .query(new Query(searchSourceBuilderCollection.getQueryBuilder().build()))
                             .sort(Arrays.asList(searchSourceBuilderCollection.getSortBuilder().build()))
                     ,c);
             List<Hit<T>> hits = response.hits().hits();

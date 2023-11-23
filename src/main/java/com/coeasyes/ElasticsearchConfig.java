@@ -32,7 +32,7 @@ import java.util.Arrays;
 @Slf4j
 @Configuration
 @ComponentScan("com.coeasyes")
-@ConditionalOnProperty(prefix = "coeasyes",name = "enable",havingValue = "true",matchIfMissing = false)
+@ConditionalOnProperty(prefix = "coeasyes",name = "enable",havingValue = "true",matchIfMissing = true)
 @EnableConfigurationProperties({CoEasyEsProperties.class})
 public class ElasticsearchConfig {
 
@@ -44,14 +44,15 @@ public class ElasticsearchConfig {
     //配置高级客户端
     @Bean(name = "client")
     public ElasticsearchClient initClient() {
+        log.info("==========初始化ES客户端==========");
         HttpHost[] httpHosts = Arrays.stream(coEasyEsProperties.getHosts().split(",")).map(
                 host -> {
                     String[] hostParts = host.split(":");
                     String hostName = hostParts[0];
                     int port = Integer.parseInt(hostParts[1]);
-                    return new HttpHost(hostName, port, coEasyEsProperties.isEnableSSL() ? SSL_SCHEME_NAME : HttpHost.DEFAULT_SCHEME_NAME);
+                    return new HttpHost(hostName, port, coEasyEsProperties.isEnableSsl() ? SSL_SCHEME_NAME : HttpHost.DEFAULT_SCHEME_NAME);
                 }).toArray(HttpHost[]::new);
-        RestClient restClient = coEasyEsProperties.isEnableSSL() ? sslConnect(httpHosts) : noSslConnect(httpHosts);
+        RestClient restClient = coEasyEsProperties.isEnableSsl() ? sslConnect(httpHosts) : noSslConnect(httpHosts);
         return new ElasticsearchClient(new RestClientTransport(restClient, new JacksonJsonpMapper()));
     }
 

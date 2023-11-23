@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author: jiangchengxuan
  * @created: 2023/11/22 16:44
  */
-@ConfigurationProperties(prefix = "coeasyes")
+@ConfigurationProperties(prefix = "spring.coeasyes")
 @Data
 public class CoEasyEsProperties {
 
@@ -21,7 +21,7 @@ public class CoEasyEsProperties {
 
     private String password;
 
-    private boolean enableSSL;
+    private boolean enableSsl;
 
     private String crtFile;
 
