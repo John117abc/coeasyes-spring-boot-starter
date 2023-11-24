@@ -3,8 +3,9 @@ package com.coeasyes.mapper.impl;
 import com.coeasyes.domain.EsBaseData;
 import com.coeasyes.domain.EsBaseDto;
 import com.coeasyes.domain.EsPage;
+import com.coeasyes.exception.CoEsException;
 import com.coeasyes.mapper.EsBaseMapper;
-import com.coeasyes.util.EsUtils;
+import com.coeasyes.core.EsUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -65,4 +66,47 @@ public class EsBaseMapperImpl implements EsBaseMapper {
     public <T extends EsBaseData> boolean update(T esBaseEntity, Class<?> clazz) {
         return esUtils.updateData(esBaseEntity,clazz);
     }
+
+    @Override
+    public <T extends EsBaseData> T selectById(T esBaseData,Class<?> clazz) {
+        return esUtils.selectDataById(esBaseData.getIndexName(),esBaseData.getEsId(),clazz);
+    }
+
+    @Override
+    public <T extends EsBaseData> boolean deleteById(T esBaseData) {
+        return esUtils.deleteDataById(esBaseData.getIndexName(),esBaseData.getEsId());
+    }
+
+    @Override
+    public boolean deleteAll(String indexName) {
+        return esUtils.deleteAllData(indexName);
+    }
+
+    @Override
+    public <T extends EsBaseDto> Long deleteByQuery(T esBaseDto) {
+        try {
+            return esUtils.deleteDataByCondition(esBaseDto.getIndexName(),esBaseDto.getInitializeEsFields());
+        } catch (IllegalAccessException e) {
+            throw new CoEsException("获取查询条件失败",e);
+        }
+    }
+
+    @Override
+    public boolean createIndex(String indexName) {
+        return esUtils.addIndex(indexName);
+    }
+
+    @Override
+    public boolean deleteIndex(String indexName) {
+        if (!esUtils.isIndexExist(indexName)) {
+            return true; // 如果索引不存在，无需进行删除操作，直接返回 true
+        }
+        return esUtils.deleteAllData(indexName) && esUtils.deleteIndex(indexName);
+    }
+
+    @Override
+    public <T extends EsBaseData> boolean upsert(T esBaseEntity, Class<?> clazz) {
+        return esUtils.addOrUpdateData(esBaseEntity.getIndexName(),esBaseEntity.getEsId(),esBaseEntity,clazz);
+    }
+
 }

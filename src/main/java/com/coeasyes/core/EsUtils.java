@@ -1,4 +1,4 @@
-package com.coeasyes.util;
+package com.coeasyes.core;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.*;
@@ -9,9 +9,8 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
-import co.elastic.clients.util.ObjectBuilder;
 import com.coeasyes.domain.*;
-import com.coeasyes.exception.UtilException;
+import com.coeasyes.exception.CoEsException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +20,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * @program: manage-microservice
@@ -53,7 +51,7 @@ public class EsUtils {
             log.error("elasticsearch isIndexExist error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch isIndexExist error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch isIndexExist error , meassage=" + e.getMessage());
         }
         return exists;
     }
@@ -77,7 +75,7 @@ public class EsUtils {
             log.error("elasticsearch addindex error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch addindex error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch addindex error , meassage=" + e.getMessage());
         }
 
         //3.根据返回值判断结果
@@ -100,11 +98,10 @@ public class EsUtils {
             //2.1 设置索引名称
             deleteRespone = elasticsearchClient.indices().delete(c -> c.index(indexName));
         } catch (IOException e) {
-//            e.printStackTrace();
             log.error("elasticsearch deleteIndex error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch deleteIndex error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch deleteIndex error , meassage=" + e.getMessage());
         }
         //3.根据返回值判断结果
         return deleteRespone.acknowledged();
@@ -131,35 +128,19 @@ public class EsUtils {
             log.error("elasticsearch addOrUpdateDoc error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch addOrUpdateDoc error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch addOrUpdateDoc error , meassage=" + e.getMessage());
         }
         return response.result().equals(Result.Created);
     }
 
-    /**
-     * 创建文档id存在则更新文档
-     *
-     * @param indexName
-     * @param id
-     * @param data
-     * @throws IOException
-     */
-    public <T> boolean addOrUpdateData(String indexName, String id, T data,Class<T> clazz) {
-        Assert.notNull(data, "Elasticsearch exception data null");
-        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
-        UpdateResponse<T> request = null;
-        try {
-            request = elasticsearchClient.update(
-                    e -> e.index(indexName).id(id).refresh(Refresh.True).doc(data), clazz);
-        } catch (Exception e) {
-            log.error("elasticsearch addOrUpdateDoc error , meassage = {}", e.getMessage());
-            //打印轨迹
-            log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch addOrUpdateDoc error , meassage=" + e.getMessage());
-        }
-        return request.result().equals(Result.Updated);
-    }
 
+    /**
+     * 通过索引以及主键更新数据
+     * @param data
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     public <T extends EsBaseData> boolean updateData(T data,Class<?> clazz){
         Assert.notNull(data, "Elasticsearch exception data null");
         Assert.hasLength(data.getIndexName(), "Elasticsearch exception indexName null");
@@ -172,7 +153,31 @@ public class EsUtils {
             log.error("elasticsearch updateDoc error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch updateDoc error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch updateDoc error , meassage=" + e.getMessage());
+        }
+        return request.result().equals(Result.Updated);
+    }
+
+    /**
+     * 创建文档id存在则更新文档
+     *
+     * @param indexName
+     * @param id
+     * @param data
+     * @throws IOException
+     */
+    public  <T extends EsBaseData> boolean addOrUpdateData(String indexName, String id, T data,Class<?> clazz) {
+        Assert.notNull(data, "Elasticsearch exception data null");
+        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
+        UpdateResponse<?> request = null;
+        try {
+            request = elasticsearchClient.update(
+                    e -> e.index(indexName).id(id).refresh(Refresh.True).doc(data), clazz);
+        } catch (Exception e) {
+            log.error("elasticsearch addOrUpdateDoc error , meassage = {}", e.getMessage());
+            //打印轨迹
+            log.error(e.getMessage(), e);
+            throw new CoEsException("elasticsearch addOrUpdateDoc error , meassage=" + e.getMessage());
         }
         return request.result().equals(Result.Updated);
     }
@@ -187,10 +192,9 @@ public class EsUtils {
         Assert.notEmpty(datas, "addBatchData elastaicsearch exception datas is null");
         if (datas.size() > 100000) {
             log.error("es add batch data too large{}", datas.size());
-            throw new UtilException("es add batch data too large" + datas.size());
+            throw new CoEsException("es add batch data too large" + datas.size());
         }
         BulkResponse result = null;
-        BulkRequest bulkRequest = null;
         try {
             BulkRequest.Builder br = new BulkRequest.Builder();
             datas.forEach(data -> br.operations(op -> op
@@ -200,15 +204,13 @@ public class EsUtils {
                             .document(data)
                     )
             ));
-            bulkRequest = br.build();
-            result = elasticsearchClient.bulk(bulkRequest);
+            result = elasticsearchClient.bulk(br.build());
         }catch (Exception e){
             log.error("elasticsearch addBatchData error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch addBatchData error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch addBatchData error , meassage=" + e.getMessage());
         }
-        // Log errors, if any
         if (result.errors()) {
             log.error("Bulk had errors");
             for (BulkResponseItem item: result.items()) {
@@ -227,7 +229,7 @@ public class EsUtils {
         DeleteByQueryResponse response = null;
         if (!isIndexExist(indexName)) {
             log.error("elasticsearch deleteAllData error , indexName = {} is not exist", indexName);
-            throw new UtilException("elasticsearch deleteAllData error , indexName = " + indexName + " is not exist");
+            throw new CoEsException("elasticsearch deleteAllData error , indexName = " + indexName + " is not exist");
         }
         try {
             Query.Builder queryBuilder = new Query.Builder();
@@ -239,122 +241,87 @@ public class EsUtils {
             log.error("elasticsearch deleteAllData error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch deleteAllData error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch deleteAllData error , meassage=" + e.getMessage());
         }
         return response.deleted() > 0;
     }
-//    /**
-//     * 通过id删除数据
-//     *
-//     * @param indexName
-//     * @param id
-//     * @return
-//     */
-//    public boolean deleteDataById(String indexName, String id) {
-//        DeleteRequest deleteRequest = new DeleteRequest(indexName, id);
-//        DeleteResponse response = null;
-//        try {
-//            response = restHighLevelClient.delete(deleteRequest, RequestOptions.DEFAULT);
-//        } catch (IOException e) {
-//            log.error("elasticsearch deleteDocById error , meassage = {}", e.getMessage());
-//            //打印轨迹
-//            log.error(e.getMessage(), e);
-//            throw new UtilException("elasticsearch deleteDataById error , meassage=" + e.getMessage());
-//        }
-//        return response.getResult().equals(DocWriteResponse.Result.DELETED);
-//    }
-//
-//
-//    /**
-//     * 通过条件删除数据
-//     *
-//     * @param indexName
-//     * @param conditionFileds
-//     * @return
-//     */
-//    public boolean deleteDataByCondition(String indexName, List<EsField> conditionFileds) {
-//        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
-//        Assert.notEmpty(conditionFileds, "Elasticsearch exception conditionFileds null");
-//        BulkByScrollResponse resp = null;
-//        try {
-//            DeleteByQueryRequest request = new DeleteByQueryRequest(indexName);
-////            SearchSourceBuilder searchSourceBuilder = buildSearchSourceBuilder(conditionFileds);
-////            request.getSearchRequest().source(searchSourceBuilder);
-//            // 更新时版本冲突
-//            request.setConflicts("proceed");
-//            //构建条件
-//            setDeletCondition(conditionFileds, request);
-//            // 刷新索引
-//            request.setRefresh(true);
-//
-//            resp = restHighLevelClient.deleteByQuery(request, RequestOptions.DEFAULT);
-//        } catch (Exception e) {
-//            log.error("elasticsearch deleteDataByCondition error , meassage = {}", e.getMessage());
-//            //打印轨迹
-//            log.error(e.getMessage(), e);
-//            throw new UtilException("elasticsearch deleteDataByCondition error , meassage=" + e.getMessage());
-//        }
-//        return resp.getStatus().getDeleted() > 0;
-//    }
-//
-//
-//    /**
-//     * 通过条件更新数据
-//     *
-//     * @param indexName
-//     * @param conditionFileds
-//     * @return
-//     */
-//    public boolean updateDataByCondition(String indexName, List<EsField> conditionFileds, Object data) {
-//        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
-//        Assert.notEmpty(conditionFileds, "Elasticsearch exception conditionFileds null");
-//        Assert.notNull(data, "elasticsearch updateDataByCondition data is null ");
-//        BulkByScrollResponse resp = null;
-//        try {
-//            UpdateByQueryRequest request = new UpdateByQueryRequest(indexName);
-//            //设置分片并行
-//            request.setSlices(2);
-//            //设置版本冲突时继续执行
-//            request.setConflicts("proceed");
-//            //构建条件
-//            setUpdateConfition(conditionFileds, request);
-//            //设置更新完成后刷新索引 ps很重要如果不加可能数据不会实时刷新
-//            request.setRefresh(true);
-//            StringBuffer scriptContext = buildScriptContext(data);
-//            //设置要修改的内容可以多个值多个用；隔开
-//            request.setScript(new Script(scriptContext.toString()));
-//            resp = restHighLevelClient.updateByQuery(request, RequestOptions.DEFAULT);
-//        } catch (Exception e) {
-//            log.error("elasticsearch updateDataByCondition error , meassage = {}", e.getMessage());
-//            //打印轨迹
-//            log.error(e.getMessage(), e);
-//            throw new UtilException("elasticsearch updateDataByCondition error , meassage=" + e.getMessage());
-//        }
-//        return resp.getStatus().getUpdated() > 0;
-//    }
-//
-//    /**
-//     * 根据id查询文档
-//     */
-//    public <T> T selectDataById(String indexName, String id, Class<T> c) {
-//        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
-//        Assert.hasLength(id, "Elasticsearch exception id null");
-//        GetResponse response = null;
-//        try {
-//            //设置查询的索引、文档
-//            GetRequest indexRequest = new GetRequest(indexName, id);
-//            response = restHighLevelClient.get(indexRequest, RequestOptions.DEFAULT);
-//        } catch (Exception e) {
-//            log.error("elasticsearch selectDataById error , meassage = {}", e.getMessage());
-//            //打印轨迹
-//            log.error(e.getMessage(), e);
-//            throw new UtilException("elasticsearch selectDataById error , meassage=" + e.getMessage());
-//        }
-//        String res = response.getSourceAsString();
-//        return JSONObject.parseObject(res, c);
-//    }
-//
-//
+    /**
+     * 通过id删除数据
+     *
+     * @param indexName
+     * @param id
+     * @return
+     */
+    public boolean deleteDataById(String indexName, String id) {
+        DeleteResponse response = null;
+        try {
+            response = elasticsearchClient.delete(d -> d
+                    .index(indexName)
+                    .id(id).refresh(Refresh.True));
+        } catch (IOException e) {
+            log.error("elasticsearch deleteDocById error , meassage = {}", e.getMessage());
+            //打印轨迹
+            log.error(e.getMessage(), e);
+            throw new CoEsException("elasticsearch deleteDataById error , meassage=" + e.getMessage());
+        }
+        return response.result().equals(Result.Deleted);
+    }
+
+
+    /**
+     * 通过条件删除数据
+     *
+     * @param indexName
+     * @param conditionFileds
+     * @return
+     */
+    public Long deleteDataByCondition(String indexName, List<EsField> conditionFileds) {
+        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
+        DeleteByQueryResponse response = null;
+        if (!isIndexExist(indexName)) {
+            log.error("elasticsearch deleteAllData error , indexName = {} is not exist", indexName);
+            throw new CoEsException("elasticsearch deleteAllData error , indexName = " + indexName + " is not exist");
+        }
+        try {
+            // 创建查询条件
+            EsSearchSourceBuilderCollection searchSourceBuilderCollection = buildSearchSourceBuilder(conditionFileds);
+            response = elasticsearchClient.deleteByQuery(d -> d
+                    .index(indexName)
+                    .query(new Query(searchSourceBuilderCollection.getQueryBuilder().build()))
+                    .refresh(true));
+
+        } catch (Exception e) {
+            log.error("elasticsearch deleteAllData error , meassage = {}", e.getMessage());
+            //打印轨迹
+            log.error(e.getMessage(), e);
+            throw new CoEsException("elasticsearch deleteAllData error , meassage=" + e.getMessage());
+        }
+        return response.deleted();
+    }
+
+
+    /**
+     * 根据id查询文档
+     */
+    public <T> T selectDataById(String indexName, String id, Class<?> tClass) {
+        Assert.hasLength(indexName, "Elasticsearch exception indexName null");
+        Assert.hasLength(id, "Elasticsearch exception id null");
+        GetResponse<T> response = null;
+        try {
+            //设置查询的索引、文档
+            elasticsearchClient.get(g -> g
+                            .index(indexName)
+                            .id(id),tClass);
+        } catch (Exception e) {
+            log.error("elasticsearch selectDataById error , meassage = {}", e.getMessage());
+            //打印轨迹
+            log.error(e.getMessage(), e);
+            throw new CoEsException("elasticsearch selectDataById error , meassage=" + e.getMessage());
+        }
+        return response.found() ? response.source() : null;
+    }
+
+
     /**
      * 条件查询
      *
@@ -387,7 +354,7 @@ public class EsUtils {
             log.error("elasticsearch selectDataList error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch selectDataList error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch selectDataList error , meassage=" + e.getMessage());
         }
         return res;
     }
@@ -409,7 +376,7 @@ public class EsUtils {
             // 创建查询条件
             EsSearchSourceBuilderCollection searchSourceBuilderCollection = buildSearchSourceBuilder(conditionFileds);
             //打印DLS查询语句
-//            log.info("DSL:{}", new Query(searchSourceBuilderCollection.getQueryBuilder().build()));
+            log.debug("DSL:{}", new Query(searchSourceBuilderCollection.getQueryBuilder().build()));
             SearchResponse<T> response = elasticsearchClient.search(s -> s
                             .index(indexName)
                             .query(new Query(searchSourceBuilderCollection.getQueryBuilder().build()))
@@ -432,7 +399,7 @@ public class EsUtils {
             //打印轨迹
             log.error(e.getMessage(), e);
             e.printStackTrace();
-            throw new UtilException("elasticsearch selectDataPage error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch selectDataPage error , meassage=" + e.getMessage());
         }
         return new EsPage<>(pageNum, pageSize, total, res);
     }
@@ -452,7 +419,6 @@ public class EsUtils {
     private static SortOptions.Builder buildSort(List<EsField> sortFileds) {
         SortOptions.Builder sortBuilder = new SortOptions.Builder();
         sortBuilder.doc(doc -> doc.order(SortOrder.Asc));
-//        sortBuilder.field(t->t.field("id").order(SortOrder.Asc));
         if (!CollectionUtils.isEmpty(sortFileds)) {
             for (EsField sortFiled : sortFileds) {
                 switch (sortFiled.getSortTypeEnum()) {

@@ -90,48 +90,105 @@ public class EsSysHttppostLogVo extends EsBaseVo implements Serializable {
 ## 3.5 使用说明
 - 通过继承EsBaseMapper接口，可以直接使用里面的方法，参考以下代码
 ```java
-    /**
-     * 列表查询
-     * @param esBaseDto es基础dto
-     * @param clazz es实体类
-     * @param <T> es基础dto类型
-     * @return 列表数据
-     */
-    <T extends EsBaseDto> List<?> select(T esBaseDto, Class<?> clazz);
+public interface EsBaseMapper {
 
-    /**
-     * 分页查询
-     * @param esBaseDto es基础dto
-     * @param clazz es实体类
-     * @param <T> es基础dto类型
-     * @return 分页数据
-     */
-    <T extends EsBaseDto> EsPage<?> selectPage(T esBaseDto, Class<?> clazz);
+  /**
+   * 列表查询
+   * @param esBaseDto es基础dto
+   * @param clazz es实体类
+   * @param <T> es基础dto类型
+   * @return 列表数据
+   */
+  <T extends EsBaseDto> List<?> select(T esBaseDto, Class<?> clazz);
 
-    /**
-     * 新增数据
-     * @param esBaseEntity es实体
-     * @param <T> es实体类型
-     * @return 是否成功
-     */
-    <T extends EsBaseData> boolean insert(T esBaseEntity);
+  /**
+   * 分页查询
+   * @param esBaseDto es基础dto
+   * @param clazz es实体类
+   * @param <T> es基础dto类型
+   * @return 分页数据
+   */
+  <T extends EsBaseDto> EsPage<?> selectPage(T esBaseDto, Class<?> clazz);
 
-    /**
-     * 批量新增数据
-     * @param esBaseEntityList
-     * @param <T>
-     * @return
-     */
-    <T extends EsBaseData> boolean insertBatch(List<T> esBaseEntityList);
+  /**
+   * 新增数据
+   * @param esBaseEntity es实体
+   * @param <T> es实体类型
+   * @return 是否成功
+   */
+  <T extends EsBaseData> boolean insert(T esBaseEntity);
 
-    /**
-     * 修改单条数据
-     * @param esBaseEntity  es实体
-     * @param clazz es实体类
-     * @param <T> es实体类型
-     * @return 是否成功
-     */
-    <T extends EsBaseData> boolean update(T esBaseEntity, Class<?> clazz);
+  /**
+   * 批量新增数据
+   * @param esBaseEntityList
+   * @param <T>
+   * @return
+   */
+  <T extends EsBaseData> boolean insertBatch(List<T> esBaseEntityList);
+
+  /**
+   * 根据主键查询数据
+   * @param <T> es实体类型
+   * @param clazz es实体类
+   * @return es实体
+   */
+  <T extends EsBaseData> T selectById(T esBaseData,Class<?> clazz);
+
+  /**
+   * 根据主键删除数据
+   * @param esBaseData es实体
+   * @param <T> es实体类型
+   * @return 是否成功
+   */
+  <T extends EsBaseData> boolean deleteById(T esBaseData);
+
+  /**
+   * 删除某个索引下的所有数据
+   * @param indexName 索引名称
+   * @return 是否成功
+   */
+  boolean deleteAll(String indexName);
+
+  /**
+   * 根据条件删除数据
+   * @param <T> es基础dto类型
+   * @param esBaseDto es基础dto
+   * @return 是否成功
+   */
+  <T extends EsBaseDto> Long deleteByQuery(T esBaseDto);
+
+  /**
+   * 创建索引
+   * @param indexName 索引名称
+   * @return 是否成功
+   */
+  boolean createIndex(String indexName);
+
+  /**
+   * 删除索引以及下面所有数据
+   * @param indexName 索引名称
+   * @return 是否成功
+   */
+  boolean deleteIndex(String indexName);
+
+  /**
+   * 更新或新增数据
+   * @param esBaseEntity es实体
+   * @param clazz es实体类
+   * @param <T> es实体类型
+   * @return 是否成功
+   */
+  <T extends EsBaseData> boolean upsert(T esBaseEntity, Class<?> clazz);
+
+  /**
+   * 修改单条数据
+   * @param esBaseEntity  es实体
+   * @param clazz es实体类
+   * @param <T> es实体类型
+   * @return 是否成功
+   */
+  <T extends EsBaseData> boolean update(T esBaseEntity, Class<?> clazz);
+}
 ```
 ## 3.6 jar包下载
 - 下载链接

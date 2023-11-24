@@ -50,6 +50,60 @@ public interface EsBaseMapper {
     <T extends EsBaseData> boolean insertBatch(List<T> esBaseEntityList);
 
     /**
+     * 根据主键查询数据
+     * @param <T> es实体类型
+     * @param clazz es实体类
+     * @return es实体
+     */
+    <T extends EsBaseData> T selectById(T esBaseData,Class<?> clazz);
+
+    /**
+     * 根据主键删除数据
+     * @param esBaseData es实体
+     * @param <T> es实体类型
+     * @return 是否成功
+     */
+    <T extends EsBaseData> boolean deleteById(T esBaseData);
+
+    /**
+     * 删除某个索引下的所有数据
+     * @param indexName 索引名称
+     * @return 是否成功
+     */
+    boolean deleteAll(String indexName);
+
+    /**
+     * 根据条件删除数据
+     * @param <T> es基础dto类型
+     * @param esBaseDto es基础dto
+     * @return 是否成功
+     */
+    <T extends EsBaseDto> Long deleteByQuery(T esBaseDto);
+
+    /**
+     * 创建索引
+     * @param indexName 索引名称
+     * @return 是否成功
+     */
+    boolean createIndex(String indexName);
+
+    /**
+     * 删除索引以及下面所有数据
+     * @param indexName 索引名称
+     * @return 是否成功
+     */
+    boolean deleteIndex(String indexName);
+
+    /**
+     * 更新或新增数据
+     * @param esBaseEntity es实体
+     * @param clazz es实体类
+     * @param <T> es实体类型
+     * @return 是否成功
+     */
+    <T extends EsBaseData> boolean upsert(T esBaseEntity, Class<?> clazz);
+
+    /**
      * 修改单条数据
      * @param esBaseEntity  es实体
      * @param clazz es实体类

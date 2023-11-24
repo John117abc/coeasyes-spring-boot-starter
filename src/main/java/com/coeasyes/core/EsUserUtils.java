@@ -1,11 +1,11 @@
-package com.coeasyes.util;
+package com.coeasyes.core;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.security.ChangePasswordResponse;
 import co.elastic.clients.elasticsearch.security.IndicesPrivileges;
 import co.elastic.clients.elasticsearch.security.PutRoleResponse;
 import co.elastic.clients.elasticsearch.security.PutUserResponse;
-import com.coeasyes.exception.UtilException;
+import com.coeasyes.exception.CoEsException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -69,7 +69,7 @@ public class EsUserUtils {
             log.error("elasticsearch createRole error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch createRole error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch createRole error , meassage=" + e.getMessage());
         }
         return result;
     }
@@ -88,7 +88,7 @@ public class EsUserUtils {
             log.error("elasticsearch changePassword error , meassage = {}", e.getMessage());
             //打印轨迹
             log.error(e.getMessage(), e);
-            throw new UtilException("elasticsearch changePassword error , meassage=" + e.getMessage());
+            throw new CoEsException("elasticsearch changePassword error , meassage=" + e.getMessage());
         }
         return result;
     }
